@@ -1,0 +1,48 @@
+#!/bin/bash
+#######################
+## Encryption Script ##
+#######################
+
+purple=`echo -en "\e[35m"`
+normal=`echo -en "\e[0m"`
+green=`echo -en "\e[32m"`
+orange=`echo -en "\e[33m"`
+
+echo -e "${purple}#################\nEncryption Script\n#################$normal"
+
+lsblk -f
+
+read -p "${green}Enter partition [/dev/sda1]: $normal" input
+partition=${input:-/dev/sda1}
+echo "partition: "$partition
+
+read -p "${green}Enter label [backup]: $normal" input
+label=${input:-backup}
+echo "label: "$label
+
+read -p "${orange}Press enter to start: $normal"
+
+#unmounten
+sudo umount $partition
+
+#überschreiben mit urandom
+sudo dd bs=1G status=progress if=/dev/urandom of=$partition
+
+#convert to encrypted
+sudo cryptsetup luksFormat $partition
+
+#devicemapper öffnen
+sudo cryptsetup luksOpen $partition $label
+
+#im eben geöffneten bereich fs anlegen
+sudo mkfs.ext4 -L $label /dev/mapper/$label
+
+#mounten
+sudo mount /dev/mapper/$label /mnt
+
+#berechtigungen
+sudo chown 1000:1000 /mnt
+
+lsblk -f
+
+echo "${green}Done...$normal"
