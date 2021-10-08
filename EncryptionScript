@@ -1,48 +1,52 @@
 #!/bin/bash
-#######################
-## Encryption Script ##
-#######################
 
+# set colors
 purple=`echo -en "\e[35m"`
 normal=`echo -en "\e[0m"`
 green=`echo -en "\e[32m"`
 orange=`echo -en "\e[33m"`
 
+# echo title
 echo -e "${purple}#################\nEncryption Script\n#################$normal"
 
+# output blocks
 lsblk -f
 
+# read partition from input
 read -p "${green}Enter partition [/dev/sda1]: $normal" input
 partition=${input:-/dev/sda1}
 echo "partition: "$partition
 
+# read label from input
 read -p "${green}Enter label [backup]: $normal" input
 label=${input:-backup}
 echo "label: "$label
 
+# wait for user input
 read -p "${orange}Press enter to start: $normal"
 
-#unmounten
+# unmount the select partition
 sudo umount $partition
 
-#überschreiben mit urandom
+# override partition with dd / urandom
 sudo dd bs=1G status=progress if=/dev/urandom of=$partition
 
-#convert to encrypted
+# encrypt the partition
 sudo cryptsetup luksFormat $partition
 
-#devicemapper öffnen
+# open encrypted device to device mapper
 sudo cryptsetup luksOpen $partition $label
 
-#im eben geöffneten bereich fs anlegen
+# create filesystem for the partition
 sudo mkfs.ext4 -L $label /dev/mapper/$label
 
-#mounten
+# mount the devicemapper to /mnt
 sudo mount /dev/mapper/$label /mnt
 
-#berechtigungen
+# set permissions to /mnt
 sudo chown 1000:1000 /mnt
 
-lsblk -f
+# unmount devicemapper
+sudo umount /dev/mapper/$label
 
 echo "${green}Done...$normal"
