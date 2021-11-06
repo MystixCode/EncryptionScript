@@ -1,2 +1,2 @@
 # EncryptionScript
-A script to encrypt a external storage device
+A script to encrypt an external storage device
